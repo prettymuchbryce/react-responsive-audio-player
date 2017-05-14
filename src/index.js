@@ -102,6 +102,7 @@ class AudioPlayer extends React.Component {
     this.audioProgressBoundingRect = null;
 
     // event listeners to add on mount and remove on unmount
+    this.adjustDisplayedTime = this.adjustDisplayedTime.bind(this);
     this.seekReleaseListener = e => this.seek(e);
     this.resizeListener = () => this.fetchAudioProgressBoundingRect();
     this.audioPlayListener = () => this.setState({ paused: false });
@@ -120,6 +121,8 @@ class AudioPlayer extends React.Component {
 
   componentDidMount () {
     // add event listeners bound outside the scope of our component
+    window.addEventListener('mousemove', this.adjustDisplayedTime);
+    document.addEventListener('touchmove', this.adjustDisplayedTime);
     window.addEventListener('mouseup', this.seekReleaseListener);
     document.addEventListener('touchend', this.seekReleaseListener);
     window.addEventListener('resize', this.resizeListener);
@@ -153,6 +156,8 @@ class AudioPlayer extends React.Component {
 
   componentWillUnmount () {
     // remove event listeners bound outside the scope of our component
+    window.removeEventListener('mousemove', this.adjustDisplayedTime);
+    document.removeEventListener('touchmove', this.adjustDisplayedTime);
     window.removeEventListener('mouseup', this.seekReleaseListener);
     document.removeEventListener('touchend', this.seekReleaseListener);
     window.removeEventListener('resize', this.resizeListener);
@@ -384,8 +389,6 @@ class AudioPlayer extends React.Component {
 
     const progressBarWidth = `${ (displayedTime / duration) * 100 }%`;
 
-    const adjustDisplayedTime = e => this.adjustDisplayedTime(e);
-
     return (
       <div
         id="audio_player"
@@ -439,10 +442,8 @@ class AudioPlayer extends React.Component {
           id="audio_progress_container"
           className="audio_progress_container"
           ref={(ref) => this.audioProgressContainer = ref}
-          onMouseDown={adjustDisplayedTime}
-          onMouseMove={adjustDisplayedTime}
-          onTouchStart={adjustDisplayedTime}
-          onTouchMove={adjustDisplayedTime}
+          onMouseDown={this.adjustDisplayedTime}
+          onTouchStart={this.adjustDisplayedTime}
         >
           <div
             id="audio_progress"
