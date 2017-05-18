@@ -1,5 +1,9 @@
 ## Contribute
-Contributions are welcome. If the change you'd like to implement is a new feature, please open an issue first.
+Contributions are welcome.
+
+If the change you'd like to implement is a new feature, please open an issue first, for discussion.
+
+If you're fixing a bug you found, please open an issue (for tracking purposes), and reference the issue # in your pull request.
 
 ### Build
 To install build dependencies, run `npm install`.
