@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import arrayFindIndex from 'array-find-index';
 import classNames from 'classnames';
 
@@ -472,18 +473,18 @@ class AudioPlayer extends React.Component {
 }
 
 AudioPlayer.propTypes = {
-  playlist: React.PropTypes.array,
-  autoplay: React.PropTypes.bool,
-  autoplayDelayInSeconds: React.PropTypes.number,
-  gapLengthInSeconds: React.PropTypes.number,
-  hideBackSkip: React.PropTypes.bool,
-  hideForwardSkip: React.PropTypes.bool,
-  cycle: React.PropTypes.bool,
-  disableSeek: React.PropTypes.bool,
-  stayOnBackSkipThreshold: React.PropTypes.number,
-  style: React.PropTypes.object,
-  onMediaEvent: React.PropTypes.object,
-  audioElementRef: React.PropTypes.func
+  playlist: PropTypes.array,
+  autoplay: PropTypes.bool,
+  autoplayDelayInSeconds: PropTypes.number,
+  gapLengthInSeconds: PropTypes.number,
+  hideBackSkip: PropTypes.bool,
+  hideForwardSkip: PropTypes.bool,
+  cycle: PropTypes.bool,
+  disableSeek: PropTypes.bool,
+  stayOnBackSkipThreshold: PropTypes.number,
+  style: PropTypes.object,
+  onMediaEvent: PropTypes.object,
+  audioElementRef: PropTypes.func
 };
 
 AudioPlayer.defaultProps = {
