@@ -68,9 +68,9 @@ The fastest way to get off the ground with this module is to paste the following
   <body>
     <div id="audio_player_container"></div>
 
-    <!-- react/react-dom served over CDN -->
     <script src="https://unpkg.com/react@15/dist/react.js"></script>
     <script src="https://unpkg.com/react-dom@15/dist/react-dom.js"></script>
+    <script src="https://unpkg.com/prop-types/prop-types.js"></script>
     <script src="https://unpkg.com/react-responsive-audio-player@1.1.3/dist/audioplayer.js"></script>
     <script>
       var playlist =
