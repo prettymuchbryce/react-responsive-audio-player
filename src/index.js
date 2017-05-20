@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import ResizeObserver from 'resize-observer-polyfill';
 import arrayFindIndex from 'array-find-index';
 import classNames from 'classnames';
 

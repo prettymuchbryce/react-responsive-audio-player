@@ -46,6 +46,12 @@ var webpackConfig = {
       commonjs: 'react',
       commonjs2: 'react',
       amd: 'react'
+    },
+    'resize-observer-polyfill': {
+      root: 'ResizeObserver',
+      commonjs: 'resize-observer-polyfill',
+      commonjs2: 'resize-observer-polyfill',
+      amd: 'resize-observer-polyfill'
     }
   },
   plugins: [
