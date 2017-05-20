@@ -101,6 +101,7 @@ class AudioPlayer extends React.Component {
      * position from mouse/touch coordinates
      */
     this.audioProgressBoundingRect = null;
+    this.audioProgressResizeObserver = null;
 
     // event listeners to add on mount and remove on unmount
     this.adjustDisplayedTime = this.adjustDisplayedTime.bind(this);
@@ -126,8 +127,8 @@ class AudioPlayer extends React.Component {
     document.addEventListener('touchmove', this.adjustDisplayedTime);
     window.addEventListener('mouseup', this.seekReleaseListener);
     document.addEventListener('touchend', this.seekReleaseListener);
-    window.addEventListener('resize', this.resizeListener);
-    this.resizeListener();
+    this.audioProgressResizeObserver = new ResizeObserver(this.resizeListener);
+    this.audioProgressResizeObserver.observe(this.audioProgressContainer);
 
     const audio = this.audio = document.createElement('audio');
 
@@ -161,7 +162,7 @@ class AudioPlayer extends React.Component {
     document.removeEventListener('touchmove', this.adjustDisplayedTime);
     window.removeEventListener('mouseup', this.seekReleaseListener);
     document.removeEventListener('touchend', this.seekReleaseListener);
-    window.removeEventListener('resize', this.resizeListener);
+    this.audioProgressResizeObserver.disconnect();
 
     // remove event listeners on the audio element
     this.audio.removeEventListener('play', this.audioPlayListener);
