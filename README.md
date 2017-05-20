@@ -152,7 +152,7 @@ For example, if you want your audio player to take the full screen width, do the
   <AudioPlayer style={{ position: 'fixed', bottom: 0 }} />
   ```
 
-# Usage with SASS
+## Usage with SASS
 
 If you preprocess your styles with Sass, you can have more powerful control via Sass variables. The defaults are located at the top of [**src/index.scss**](src/index.scss):
 
