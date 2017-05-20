@@ -54,6 +54,7 @@
     "webpack-dev-server": "^1.16.2"
   },
   "dependencies": {
-    "prop-types": "^15.5.10"
+    "prop-types": "^15.5.10",
+    "resize-observer-polyfill": "^1.4.2"
   }
 }

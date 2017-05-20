@@ -71,6 +71,7 @@ The fastest way to get off the ground with this module is to paste the following
     <script src="https://unpkg.com/react@15/dist/react.js"></script>
     <script src="https://unpkg.com/react-dom@15/dist/react-dom.js"></script>
     <script src="https://unpkg.com/prop-types/prop-types.js"></script>
+    <script src="https://unpkg.com/resize-observer-polyfill"></script>
     <script src="https://unpkg.com/react-responsive-audio-player@1.1.3/dist/audioplayer.js"></script>
     <script>
       var playlist =
