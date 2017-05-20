@@ -349,7 +349,7 @@ class AudioPlayer extends React.Component {
     const pageX = isTouch ? event.targetTouches.item(0).pageX : event.pageX;
     const position = pageX - boundingRect.left - document.body.scrollLeft;
     const containerWidth = boundingRect.width;
-    const progressPercentage = position / containerWidth;
+    const progressPercentage = Math.max(0, Math.min(1, position / containerWidth));
     this.setState({
       displayedTime: progressPercentage * this.audio.duration
     });
