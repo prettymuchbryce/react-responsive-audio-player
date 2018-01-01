@@ -63,7 +63,7 @@ The fastest way to get off the ground with this module is to paste the following
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>React Responsive Audio Player</title>
     <style> html, body { margin: 0; background: lightseagreen; } </style>
-    <link rel="stylesheet" href="https://unpkg.com/react-responsive-audio-player/dist/audioplayer.css">
+    <link rel="stylesheet" href="https://unpkg.com/react-responsive-audio-player@1.1.5/dist/audioplayer.css">
   </head>
   <body>
     <div id="audio_player_container"></div>
@@ -72,7 +72,7 @@ The fastest way to get off the ground with this module is to paste the following
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/prop-types/prop-types.js"></script>
     <script src="https://unpkg.com/resize-observer-polyfill"></script>
-    <script src="https://unpkg.com/react-responsive-audio-player@1.1.3/dist/audioplayer.js"></script>
+    <script src="https://unpkg.com/react-responsive-audio-player@1.1.5/dist/audioplayer.js"></script>
     <script>
       var playlist =
         [{ url: 'song1.mp3', displayText: 'Track 1 - a track to remember' },
