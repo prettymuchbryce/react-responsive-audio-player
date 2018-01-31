@@ -108,33 +108,13 @@ const AudioProgressDisplay = (props) => {
   );
 }
 
-class AudioProgress extends React.Component {
-  componentDidMount () {
-    const { audioPlayer } = this.props;
-    // add event listeners bound outside the scope of our component
-    window.addEventListener('mousemove', audioPlayer.adjustDisplayedTime);
-    document.addEventListener('touchmove', audioPlayer.adjustDisplayedTime);
-  }
-
-  componentWillUnmount () {
-    const { audioPlayer } = this.props;
-    // remove event listeners bound outside the scope of our component
-    window.removeEventListener('mousemove', audioPlayer.adjustDisplayedTime);
-    document.removeEventListener('touchmove', audioPlayer.adjustDisplayedTime);
-  }
-
-  render () {
-    const { audioPlayer } = this.props;
-    return (
-      <AudioProgressDisplay
-        {...this.props}
-        onMouseTouchStart={audioPlayer.adjustDisplayedTime}
-        onRef={(ref) => audioPlayer.audioProgressContainer = ref}
-        audioPlayer={audioPlayer}
-      />
-    );
-  }
-}
+const AudioProgress = (props) => (
+  <AudioProgressDisplay
+    {...props}
+    onMouseTouchStart={props.audioPlayer.adjustDisplayedTime}
+    onRef={(ref) => props.audioPlayer.audioProgressContainer = ref}
+  />
+);
 
 const keywordToControlComponent = {
   backskip: BackSkipButton,
@@ -249,6 +229,8 @@ class AudioPlayer extends React.Component {
 
   componentDidMount () {
     // add event listeners bound outside the scope of our component
+    window.addEventListener('mousemove', this.adjustDisplayedTime);
+    document.addEventListener('touchmove', this.adjustDisplayedTime);
     window.addEventListener('mouseup', this.seekReleaseListener);
     document.addEventListener('touchend', this.seekReleaseListener);
 
@@ -280,6 +262,8 @@ class AudioPlayer extends React.Component {
 
   componentWillUnmount () {
     // remove event listeners bound outside the scope of our component
+    window.removeEventListener('mousemove', this.adjustDisplayedTime);
+    document.removeEventListener('touchmove', this.adjustDisplayedTime);
     window.removeEventListener('mouseup', this.seekReleaseListener);
     document.removeEventListener('touchend', this.seekReleaseListener);
 
