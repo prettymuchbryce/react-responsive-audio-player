@@ -98,16 +98,10 @@ class AudioPlayer extends React.Component {
     // html audio element used for playback
     this.audio = null;
     this.audioProgressContainer = null;
-    /* bounding rectangle used for calculating seek
-     * position from mouse/touch coordinates
-     */
-    this.audioProgressBoundingRect = null;
-    this.audioProgressResizeObserver = null;
 
     // event listeners to add on mount and remove on unmount
     this.adjustDisplayedTime = this.adjustDisplayedTime.bind(this);
     this.seekReleaseListener = e => this.seek(e);
-    this.resizeListener = () => this.fetchAudioProgressBoundingRect();
     this.audioPlayListener = () => this.setState({ paused: false });
     this.audioPauseListener = () => this.setState({ paused: true });
     this.audioEndListener = () => {
@@ -128,8 +122,6 @@ class AudioPlayer extends React.Component {
     document.addEventListener('touchmove', this.adjustDisplayedTime);
     window.addEventListener('mouseup', this.seekReleaseListener);
     document.addEventListener('touchend', this.seekReleaseListener);
-    this.audioProgressResizeObserver = new ResizeObserver(this.resizeListener);
-    this.audioProgressResizeObserver.observe(this.audioProgressContainer);
 
     const audio = this.audio = document.createElement('audio');
 
@@ -163,7 +155,6 @@ class AudioPlayer extends React.Component {
     document.removeEventListener('touchmove', this.adjustDisplayedTime);
     window.removeEventListener('mouseup', this.seekReleaseListener);
     document.removeEventListener('touchend', this.seekReleaseListener);
-    this.audioProgressResizeObserver.disconnect();
 
     // remove event listeners on the audio element
     this.audio.removeEventListener('play', this.audioPlayListener);
@@ -318,10 +309,6 @@ class AudioPlayer extends React.Component {
     this.audio.src = this.props.playlist[this.currentTrackIndex].url;
   }
 
-  fetchAudioProgressBoundingRect () {
-    this.audioProgressBoundingRect = this.audioProgressContainer.getBoundingClientRect();
-  }
-
   handleTimeUpdate () {
     if (!this.seekInProgress && this.audio) {
       this.setState({
@@ -345,7 +332,7 @@ class AudioPlayer extends React.Component {
      * after touch handlers if we're seeking.
      */
     event.preventDefault();
-    const boundingRect = this.audioProgressBoundingRect;
+    const boundingRect = this.audioProgressContainer.getBoundingClientRect();
     const isTouch = event.type.slice(0, 5) === 'touch';
     const pageX = isTouch ? event.targetTouches.item(0).pageX : event.pageX;
     const position = pageX - boundingRect.left - document.body.scrollLeft;
