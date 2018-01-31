@@ -386,46 +386,50 @@ class AudioPlayer extends React.Component {
         style={this.props.style}
       >
 
-        <div className="audio_controls">
-          <div
-            id="skip_button"
-            className={classNames('skip_button back audio_button', {
-              'hidden': this.props.hideBackSkip
-            })}
-            onClick={() => this.backSkip()}
-          >
-            <div className="skip_button_inner">
-              <div className="right_facing_triangle"></div>
-              <div className="right_facing_triangle"></div>
-            </div>
-          </div>
-          <div
-            id="play_pause_button"
-            className={classNames('play_pause_button', 'audio_button', {
-              'paused': this.state.paused
-            })}
-            onClick={() => this.togglePause()}
-          >
-            <div className="play_pause_inner">
-              <div className="left"></div>
-              <div className="right"></div>
-              <div className="triangle_1"></div>
-              <div className="triangle_2"></div>
-            </div>
-          </div>
-          <div
-            id="skip_button"
-            className={classNames('skip_button audio_button', {
-              'hidden': this.props.hideForwardSkip
-            })}
-            onClick={() => this.skipToNextTrack()}
-          >
-            <div className="skip_button_inner">
-              <div className="right_facing_triangle"></div>
-              <div className="right_facing_triangle"></div>
-            </div>
+        <div className="spacer" />
+
+        <div
+          id="skip_button"
+          className={classNames('skip_button back audio_button', {
+            'hidden': this.props.hideBackSkip
+          })}
+          onClick={() => this.backSkip()}
+        >
+          <div className="skip_button_inner">
+            <div className="right_facing_triangle"></div>
+            <div className="right_facing_triangle"></div>
           </div>
         </div>
+
+        <div
+          id="play_pause_button"
+          className={classNames('play_pause_button', 'audio_button', {
+            'paused': this.state.paused
+          })}
+          onClick={() => this.togglePause()}
+        >
+          <div className="play_pause_inner">
+            <div className="left"></div>
+            <div className="right"></div>
+            <div className="triangle_1"></div>
+            <div className="triangle_2"></div>
+          </div>
+        </div>
+
+        <div
+          id="skip_button"
+          className={classNames('skip_button audio_button', {
+            'hidden': this.props.hideForwardSkip
+          })}
+          onClick={() => this.skipToNextTrack()}
+        >
+          <div className="skip_button_inner">
+            <div className="right_facing_triangle"></div>
+            <div className="right_facing_triangle"></div>
+          </div>
+        </div>
+
+        <div className="spacer" />
 
         <div
           id="audio_progress_container"
