@@ -9,6 +9,11 @@ const log = console.log.bind(console);
 const logError = console.error ? console.error.bind(console) : log;
 const logWarning = console.warn ? console.warn.bind(console) : log;
 
+let nextControlKey = 0;
+function getNextControlKey () {
+  return (nextControlKey++).toString();
+}
+
 /* converts given number of seconds to standard time display format
  * http://goo.gl/kEvnKn
  */
@@ -218,6 +223,9 @@ class AudioPlayer extends React.Component {
 
     this.state = this.defaultState;
 
+    // set of keys to use in controls render
+    this.controlKeys = props.controls.map(getNextControlKey);
+
     // html audio element used for playback
     this.audio = null;
     this.audioProgressContainer = null;
@@ -298,6 +306,16 @@ class AudioPlayer extends React.Component {
     // Update media event listeners that may have changed
     this.removeMediaEventListeners(this.props.onMediaEvent);
     this.addMediaEventListeners(nextProps.onMediaEvent);
+
+    const oldControls = [...this.props.controls];
+    this.controlKeys = nextProps.controls.map(control => {
+      const matchingIndex = oldControls.indexOf(control);
+      if (matchingIndex !== -1 && oldControls[matchingIndex]) {
+        oldControls[matchingIndex] = null;
+        return this.controlKeys[matchingIndex];
+      }
+      return getNextControlKey();
+    });
 
     const newPlaylist = nextProps.playlist;
     if (!newPlaylist || !newPlaylist.length) {
@@ -505,14 +523,14 @@ class AudioPlayer extends React.Component {
         title={displayText}
         style={this.props.style}
       >
-        {this.props.controls.map((controlKeyword => {
+        {this.props.controls.map((controlKeyword, index) => {
           const controlProps =
             controlKeyword === 'progress' || controlKeyword === 'progressdisplay'
               ? { displayText, timeRatio, progressBarWidth, audioPlayer: this }
               : { audioPlayer : this };
           const Control = keywordToControlComponent[controlKeyword] || null;
-          return <Control {...controlProps} />;
-        }))}
+          return <Control {...controlProps} key={this.controlKeys[index]} />;
+        })}
       </div>
     );
   }
