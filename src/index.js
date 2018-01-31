@@ -5,9 +5,45 @@ import classNames from 'classnames';
 
 import './index.scss';
 
+const deprecatedProps = [
+  {
+    name: 'hideBackSkip',
+    alternativeMessage:
+      'Exclude "backskip" from `controls` to hide the back skip button.'
+  },
+  {
+    name: 'hideForwardSkip',
+    alternativeMessage:
+      'Exclude "forwardskip" from `controls` to hide the back skip button.'
+  },
+  {
+    name: 'disableSeek',
+    alternativeMessage:
+      'Pass "progressdisplay" to `controls` (instead of "progress") ' +
+        'for a non-seekable progress bar.'
+  }
+];
+
 const log = console.log.bind(console);
 const logError = console.error ? console.error.bind(console) : log;
 const logWarning = console.warn ? console.warn.bind(console) : log;
+
+const loggedDeprecations = [];
+function logDeprecationWarnings (props) {
+  Object.keys(props).forEach(propName => {
+    const deprecatedIndex =
+      deprecatedProps.findIndex((d) => propName === d.name);
+    const deprecated = deprecatedProps[deprecatedIndex];
+    if (deprecated && loggedDeprecations.indexOf(propName) === -1) {
+      logWarning(`
+        The \`${propName}\` prop is deprecated. It will be removed in
+        react-responsive-audio-player v2.0.0. Please use the \`controls\`
+        prop instead.
+        ${deprecated.alternativeMessage}`);
+      loggedDeprecations.push(propName);
+    }
+  });
+}
 
 let nextControlKey = 0;
 function getNextControlKey () {
@@ -228,6 +264,8 @@ class AudioPlayer extends React.Component {
   }
 
   componentDidMount () {
+    logDeprecationWarnings(this.props);
+
     // add event listeners bound outside the scope of our component
     window.addEventListener('mousemove', this.adjustDisplayedTime);
     document.addEventListener('touchmove', this.adjustDisplayedTime);
@@ -287,6 +325,8 @@ class AudioPlayer extends React.Component {
   }
 
   componentWillReceiveProps (nextProps) {
+    logDeprecationWarnings(nextProps);
+
     // Update media event listeners that may have changed
     this.removeMediaEventListeners(this.props.onMediaEvent);
     this.addMediaEventListeners(nextProps.onMediaEvent);
