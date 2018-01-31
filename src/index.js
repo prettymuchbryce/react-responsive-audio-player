@@ -131,6 +131,15 @@ class AudioProgress extends React.Component {
   }
 }
 
+const keywordToControlComponent = {
+  backskip: BackSkipButton,
+  forwardskip: ForwardSkipButton,
+  playpause: PlayPauseButton,
+  spacer: Spacer,
+  progressdisplay: AudioProgressDisplay,
+  progress: AudioProgress
+};
+
 // END PRIVATE CONTROL COMPONENTS
 
 /*
@@ -496,24 +505,14 @@ class AudioPlayer extends React.Component {
         title={displayText}
         style={this.props.style}
       >
-
-        <Spacer audioPlayer={this} />
-
-        <BackSkipButton audioPlayer={this} />
-
-        <PlayPauseButton audioPlayer={this} />
-
-        <ForwardSkipButton audioPlayer={this} />
-
-        <Spacer audioPlayer={this} />
-
-        <AudioProgress
-          audioPlayer={this}
-          displayText={displayText}
-          timeRatio={timeRatio}
-          progressBarWidth={progressBarWidth}
-        />
-
+        {this.props.controls.map((controlKeyword => {
+          const controlProps =
+            controlKeyword === 'progress' || controlKeyword === 'progressdisplay'
+              ? { displayText, timeRatio, progressBarWidth, audioPlayer: this }
+              : { audioPlayer : this };
+          const Control = keywordToControlComponent[controlKeyword] || null;
+          return <Control {...controlProps} />;
+        }))}
       </div>
     );
   }
@@ -522,6 +521,14 @@ class AudioPlayer extends React.Component {
 
 AudioPlayer.propTypes = {
   playlist: PropTypes.array,
+  controls: PropTypes.arrayOf(PropTypes.oneOf([
+    'playpause',
+    'backskip',
+    'forwardskip',
+    'progress',
+    'progressdisplay',
+    'spacer'
+  ])),
   autoplay: PropTypes.bool,
   autoplayDelayInSeconds: PropTypes.number,
   gapLengthInSeconds: PropTypes.number,
@@ -536,7 +543,15 @@ AudioPlayer.propTypes = {
 };
 
 AudioPlayer.defaultProps = {
-  cycle: true
+  cycle: true,
+  controls: [
+    'spacer',
+    'backskip',
+    'playpause',
+    'forwardskip',
+    'spacer',
+    'progress'
+  ]
 };
 
 module.exports = AudioPlayer;
