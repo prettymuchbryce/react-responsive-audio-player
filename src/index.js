@@ -163,52 +163,6 @@ const keywordToControlComponent = {
 
 // END PRIVATE CONTROL COMPONENTS
 
-/*
- * AudioPlayer
- *
- * Accepts 'playlist' prop of the form:
- *
- * [{ "url": "./path/to/file.mp3",
- *    "displayText": "ArtistA - Track 1" },
- *  { "url": "https://domain.com/track2.ogg",
- *    "displayText": "ArtistB - Track 2" }]
- *
- * Accepts 'autoplay' prop (true/[false]).
- *
- * Accepts 'autoplayDelayInSeconds' prop (default 0).
- *
- * Accepts 'gapLengthInSeconds' prop (default 0).
- * Specifies gap at end of one track before next
- * track begins (ignored for manual skip).
- *
- * Accepts 'hideBackSkip' prop (default false,
- * hides back skip button if true).
- *
- * Accepts 'hideForwardSkip' prop (default false,
- * hides forward skip button if true).
- *
- * Accepts 'disableSeek' prop (default false,
- * disables seeking through the audio if true).
- *
- * Accepts 'cycle' prop (default true,
- * starts playing at the beginning of the playlist
- * when finished if true).
- *
- * Accepts 'stayOnBackSkipThreshold' prop, default 5,
- * is number of seconds to progress until pressing back skip
- * restarts the current track.
- *
- * Accepts 'style' prop, object, is applied to
- * outermost div (React styles).
- *
- * Accepts 'onMediaEvent' prop, an object used for
- * listening to media events on the underlying audio element.
- *
- * Accepts 'audioElementRef' prop, a function called after
- * the component mounts and before it unmounts with the
- * internally-referenced HTML audio element as its only parameter.
- * Similar to: https://facebook.github.io/react/docs/refs-and-the-dom.html
- */
 class AudioPlayer extends React.Component {
 
   constructor (props) {
