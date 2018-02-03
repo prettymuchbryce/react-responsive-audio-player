@@ -5,9 +5,50 @@ import classNames from 'classnames';
 
 import './index.scss';
 
+const deprecatedProps = [
+  {
+    name: 'hideBackSkip',
+    alternativeMessage:
+      'Exclude "backskip" from `controls` to hide the back skip button.'
+  },
+  {
+    name: 'hideForwardSkip',
+    alternativeMessage:
+      'Exclude "forwardskip" from `controls` to hide the back skip button.'
+  },
+  {
+    name: 'disableSeek',
+    alternativeMessage:
+      'Pass "progressdisplay" to `controls` (instead of "progress") ' +
+        'for a non-seekable progress bar.'
+  }
+];
+
 const log = console.log.bind(console);
 const logError = console.error ? console.error.bind(console) : log;
 const logWarning = console.warn ? console.warn.bind(console) : log;
+
+const loggedDeprecations = [];
+function logDeprecationWarnings (props) {
+  Object.keys(props).forEach(propName => {
+    const deprecatedIndex =
+      deprecatedProps.findIndex((d) => propName === d.name);
+    const deprecated = deprecatedProps[deprecatedIndex];
+    if (deprecated && loggedDeprecations.indexOf(propName) === -1) {
+      logWarning(`
+        The \`${propName}\` prop is deprecated. It will be removed in
+        react-responsive-audio-player v2.0.0. Please use the \`controls\`
+        prop instead.
+        ${deprecated.alternativeMessage}`);
+      loggedDeprecations.push(propName);
+    }
+  });
+}
+
+let nextControlKey = 0;
+function getNextControlKey () {
+  return (nextControlKey++).toString();
+}
 
 /* converts given number of seconds to standard time display format
  * http://goo.gl/kEvnKn
@@ -17,6 +58,110 @@ function convertToTime (number) {
   const secs = (number % 60).toFixed();
   return `${ mins < 10 ? '0' : '' }${ mins }:${ secs < 10 ? '0' : '' }${ secs }`;
 }
+
+// BEGIN PRIVATE CONTROL COMPONENTS
+
+const SkipButton = ({ hidden, back, audioPlayer }) => (
+  <div
+    id="skip_button"
+    className={classNames('skip_button audio_button', { hidden, back })}
+    onClick={audioPlayer.backSkip.bind(audioPlayer)}
+  >
+    <div className="skip_button_inner">
+      <div className="right_facing_triangle"></div>
+      <div className="right_facing_triangle"></div>
+    </div>
+  </div>
+);
+
+const BackSkipButton = ({ audioPlayer }) => (
+  <SkipButton
+    audioPlayer={audioPlayer}
+    hidden={audioPlayer.props.hideBackSkip}
+    back={true}
+  />
+);
+
+const ForwardSkipButton = ({ audioPlayer }) => (
+  <SkipButton
+    audioPlayer={audioPlayer}
+    hidden={audioPlayer.props.hideForwardSkip}
+    back={false}
+  />
+);
+
+const PlayPauseButton = ({ audioPlayer }) => (
+  <div
+    id="play_pause_button"
+    className={classNames('play_pause_button audio_button', {
+      paused: audioPlayer.state.paused
+    })}
+    onClick={audioPlayer.togglePause.bind(audioPlayer)}
+  >
+    <div className="play_pause_inner">
+      <div className="left"></div>
+      <div className="right"></div>
+      <div className="triangle_1"></div>
+      <div className="triangle_2"></div>
+    </div>
+  </div>
+);
+
+const Spacer = () => <div className="spacer" />;
+
+const AudioProgressDisplay = (props) => {
+  return (
+    <div
+      id="audio_progress_container"
+      className="audio_progress_container"
+      ref={props.onRef}
+      onMouseDown={props.onMouseTouchStart}
+      onTouchStart={props.onMouseTouchStart}
+    >
+      <div
+        id="audio_progress"
+        className="audio_progress"
+        style={{ width: props.progressBarWidth }}></div>
+      <div id="audio_progress_overlay" className="audio_progress_overlay">
+        <div className="audio_info_marquee">
+          <div
+            id="audio_info"
+            className="audio_info noselect"
+            draggable="false"
+          >
+            {props.displayText}
+          </div>
+        </div>
+        <div
+          id="audio_time_progress"
+          className="audio_time_progress noselect"
+          draggable="false"
+        >
+          {props.timeRatio}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const AudioProgress = (props) => (
+  <AudioProgressDisplay
+    {...props}
+    onMouseTouchStart={props.audioPlayer.adjustDisplayedTime}
+    onRef={(ref) => props.audioPlayer.audioProgressContainer = ref}
+  />
+);
+
+const keywordToControlComponent = {
+  backskip: BackSkipButton,
+  forwardskip: ForwardSkipButton,
+  playpause: PlayPauseButton,
+  spacer: Spacer,
+  progressdisplay: AudioProgressDisplay,
+  progress: AudioProgress
+};
+
+// END PRIVATE CONTROL COMPONENTS
 
 /*
  * AudioPlayer
@@ -94,6 +239,9 @@ class AudioPlayer extends React.Component {
 
     this.state = this.defaultState;
 
+    // set of keys to use in controls render
+    this.controlKeys = props.controls.map(getNextControlKey);
+
     // html audio element used for playback
     this.audio = null;
     this.audioProgressContainer = null;
@@ -116,6 +264,8 @@ class AudioPlayer extends React.Component {
   }
 
   componentDidMount () {
+    logDeprecationWarnings(this.props);
+
     // add event listeners bound outside the scope of our component
     window.addEventListener('mousemove', this.adjustDisplayedTime);
     document.addEventListener('touchmove', this.adjustDisplayedTime);
@@ -175,9 +325,21 @@ class AudioPlayer extends React.Component {
   }
 
   componentWillReceiveProps (nextProps) {
+    logDeprecationWarnings(nextProps);
+
     // Update media event listeners that may have changed
     this.removeMediaEventListeners(this.props.onMediaEvent);
     this.addMediaEventListeners(nextProps.onMediaEvent);
+
+    const oldControls = [...this.props.controls];
+    this.controlKeys = nextProps.controls.map(control => {
+      const matchingIndex = oldControls.indexOf(control);
+      if (matchingIndex !== -1 && oldControls[matchingIndex]) {
+        oldControls[matchingIndex] = null;
+        return this.controlKeys[matchingIndex];
+      }
+      return getNextControlKey();
+    });
 
     const newPlaylist = nextProps.playlist;
     if (!newPlaylist || !newPlaylist.length) {
@@ -385,75 +547,14 @@ class AudioPlayer extends React.Component {
         title={displayText}
         style={this.props.style}
       >
-
-        <div className="audio_controls">
-          <div
-            id="skip_button"
-            className={classNames('skip_button back audio_button', {
-              'hidden': this.props.hideBackSkip
-            })}
-            onClick={() => this.backSkip()}
-          >
-            <div className="skip_button_inner">
-              <div className="right_facing_triangle"></div>
-              <div className="right_facing_triangle"></div>
-            </div>
-          </div>
-          <div
-            id="play_pause_button"
-            className={classNames('play_pause_button', 'audio_button', {
-              'paused': this.state.paused
-            })}
-            onClick={() => this.togglePause()}
-          >
-            <div className="play_pause_inner">
-              <div className="left"></div>
-              <div className="right"></div>
-              <div className="triangle_1"></div>
-              <div className="triangle_2"></div>
-            </div>
-          </div>
-          <div
-            id="skip_button"
-            className={classNames('skip_button audio_button', {
-              'hidden': this.props.hideForwardSkip
-            })}
-            onClick={() => this.skipToNextTrack()}
-          >
-            <div className="skip_button_inner">
-              <div className="right_facing_triangle"></div>
-              <div className="right_facing_triangle"></div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          id="audio_progress_container"
-          className="audio_progress_container"
-          ref={(ref) => this.audioProgressContainer = ref}
-          onMouseDown={this.adjustDisplayedTime}
-          onTouchStart={this.adjustDisplayedTime}
-        >
-          <div
-            id="audio_progress"
-            className="audio_progress"
-            style={{ width: progressBarWidth }}></div>
-          <div id="audio_progress_overlay" className="audio_progress_overlay">
-            <div className="audio_info_marquee">
-              <div id="audio_info" className="audio_info noselect" draggable="false">
-                {displayText}
-              </div>
-            </div>
-            <div
-              id="audio_time_progress"
-              className="audio_time_progress noselect"
-              draggable="false"
-            >
-              {timeRatio}
-            </div>
-          </div>
-        </div>
-
+        {this.props.controls.map((controlKeyword, index) => {
+          const controlProps =
+            controlKeyword === 'progress' || controlKeyword === 'progressdisplay'
+              ? { displayText, timeRatio, progressBarWidth, audioPlayer: this }
+              : { audioPlayer : this };
+          const Control = keywordToControlComponent[controlKeyword] || null;
+          return <Control {...controlProps} key={this.controlKeys[index]} />;
+        })}
       </div>
     );
   }
@@ -462,6 +563,14 @@ class AudioPlayer extends React.Component {
 
 AudioPlayer.propTypes = {
   playlist: PropTypes.array,
+  controls: PropTypes.arrayOf(PropTypes.oneOf([
+    'playpause',
+    'backskip',
+    'forwardskip',
+    'progress',
+    'progressdisplay',
+    'spacer'
+  ])),
   autoplay: PropTypes.bool,
   autoplayDelayInSeconds: PropTypes.number,
   gapLengthInSeconds: PropTypes.number,
@@ -476,7 +585,15 @@ AudioPlayer.propTypes = {
 };
 
 AudioPlayer.defaultProps = {
-  cycle: true
+  cycle: true,
+  controls: [
+    'spacer',
+    'backskip',
+    'playpause',
+    'forwardskip',
+    'spacer',
+    'progress'
+  ]
 };
 
 module.exports = AudioPlayer;
