@@ -35,7 +35,7 @@ var playlist =
    { url: 'audio/track2.mp3',
      displayText: 'Some Other Artist - Track 2' }];
 ReactDOM.render(
-  <AudioPlayer playlist={playlist} hideBackSkip={true} />,
+  <AudioPlayer playlist={playlist} />,
   document.getElementById('audio_player_container')
 );
 ```
@@ -44,10 +44,7 @@ JavaScript (without JSX):
 // dist/main.js
 ...
 ReactDOM.render(
-  React.createElement(AudioPlayer, {
-    playlist: playlist,
-    hideBackSkip: true
-  }),
+  React.createElement(AudioPlayer, { playlist: playlist }),
   document.getElementById('audio_player_container')
 );
 ```
@@ -81,7 +78,8 @@ The fastest way to get off the ground with this module is to paste the following
           playlist: playlist,
           autoplay: true,
           autoplayDelayInSeconds: 2.1,
-          style: { position: 'fixed', bottom: 0 }
+          style: { position: 'fixed', bottom: 0 },
+          controls: ['playpause', 'forwardskip', 'progressdisplay']
         }),
         document.getElementById('audio_player_container')
       );
@@ -108,17 +106,19 @@ Options can be passed to the AudioPlayer element as props. Currently supported p
 
 * `playlist`: an array containing urls and display text for each of the tracks you wish to play (see above example for format). **undefined** by default.
 
+* `controls`: an array of keyword strings which correspond to available audio control components. The order of keywords translates to the order of rendered controls. The default array is: `['spacer', 'backskip', 'playpause', 'forwardskip', 'spacer', 'progress']`. The possible keyword values are:
+  - `'playpause'` (play/pause toggle button)
+  - `'backskip'` (previous track skip button)
+  - `'forwardskip'` (next track skip button)
+  - `'progress'` (a drag-to-seek audio progress bar)
+  - `'progressdisplay'` (a read-only [non-draggable] progress bar)
+  - `'spacer'` (a transparent space-filling element whose default width is `10px`, although [the style of the `.spacer` class can be overridden](src/index.scss))
+
 * `autoplay`: a boolean value (`true`/`false`) that if true will cause the player to begin automatically once mounted. **false** by default.
 
 * `autoplayDelayInSeconds`: a number value that represents the number of seconds to wait until beginning autoplay. Will be ignored if `autoplay` is false. **0** by default. *NOTE:* Delay is managed by `setTimeout` and is therefore inexact. If you need to time an autoplay exactly, find a different module that uses the [WebAudio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) for playback (or fork this one!).
 
 * `gapLengthInSeconds`: a number value that represents the number of seconds to wait at the end of a track before beginning the next one in the playlist. Not applicable for manually-initiated skip. **0** by default. *NOTE:* Like `autoplayDelayInSeconds`, this delay is inexact.
-
-* `hideBackSkip`: a boolean value that if true disables the back skip button by hiding it from view. **false** by default.
-
-* `hideForwardSkip`: a boolean value that if true disables the forward skip button by hiding it from view. **false** by default.
-
-* `disableSeek`: a boolean value that if true prevents seeking. **false** by default.
 
 * `cycle`: a boolean value that if true continues playing from the beginning after the playlist has completed. **true** by default.
 
@@ -131,6 +131,16 @@ Options can be passed to the AudioPlayer element as props. Currently supported p
 * `audioElementRef`: A callback function called after the component mounts and before it unmounts. Similar to [React ref callback prop](https://facebook.github.io/react/docs/refs-and-the-dom.html#the-ref-callback-attribute) but its only parameter is the internally-referenced HTML audio element, not the component itself. **undefined** by default. *NOTE:* This ref should not be used for audio element event listeners; use `onMediaEvent`.
 
 None of these options are required, though the player will be functionally disabled if no `playlist` prop is provided.
+
+### Deprecated options
+
+These will be removed in v2.0!  Please migrate away and use the `controls` prop instead.
+
+* `hideBackSkip`: a boolean value that if true disables the back skip button by hiding it from view. **false** by default.
+
+* `hideForwardSkip`: a boolean value that if true disables the forward skip button by hiding it from view. **false** by default.
+
+* `disableSeek`: a boolean value that if true prevents seeking. **false** by default.
 
 ## Styling
 
