@@ -10,7 +10,7 @@
       body {
         margin: 0;
         background: gold;
-      } 
+      }
       .demo {
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
       }
@@ -27,9 +27,9 @@
       <div id="audio_player_container"></div>
     </main>
 
-    <!-- react/react-dom served over CDN -->
-    <script src="https://unpkg.com/react@15/dist/react.js"></script>
-    <script src="https://unpkg.com/react-dom@15/dist/react-dom.js"></script>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/prop-types/prop-types.js"></script>
 
     <script src="dist/audioplayer.js"></script>
     <script>
@@ -47,11 +47,23 @@
           displayText: 'Mountain King'
         }
       ];
+      var audioElement = {};
       ReactDOM.render(
         React.createElement(AudioPlayer, {
           playlist: playlist,
           autoplay: true,
-          style: { position: 'fixed', bottom: 0 }
+          style: { position: 'fixed', bottom: 0 },
+          audioElementRef: function (elem) {
+            audioElement = elem;
+          },
+          onMediaEvent: {
+            'playing': function (e) {
+              console.log('Playback has started', audioElement.src);
+            },
+            'pause': function (e) {
+              console.log('Playback was paused', audioElement.src);
+            }
+          }
         }),
         document.getElementById('audio_player_container')
       );

@@ -1,12 +1,54 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import arrayFindIndex from 'array-find-index';
 import classNames from 'classnames';
 
 import './index.scss';
 
+const deprecatedProps = [
+  {
+    name: 'hideBackSkip',
+    alternativeMessage:
+      'Exclude "backskip" from `controls` to hide the back skip button.'
+  },
+  {
+    name: 'hideForwardSkip',
+    alternativeMessage:
+      'Exclude "forwardskip" from `controls` to hide the back skip button.'
+  },
+  {
+    name: 'disableSeek',
+    alternativeMessage:
+      'Pass "progressdisplay" to `controls` (instead of "progress") ' +
+        'for a non-seekable progress bar.'
+  }
+];
+
 const log = console.log.bind(console);
 const logError = console.error ? console.error.bind(console) : log;
 const logWarning = console.warn ? console.warn.bind(console) : log;
+
+const loggedDeprecations = [];
+function logDeprecationWarnings (props) {
+  Object.keys(props).forEach(propName => {
+    const deprecatedIndex =
+      deprecatedProps.findIndex((d) => propName === d.name);
+    const deprecated = deprecatedProps[deprecatedIndex];
+    if (deprecated && loggedDeprecations.indexOf(propName) === -1) {
+      logWarning(`
+        The \`${propName}\` prop is deprecated. It will be removed in
+        react-responsive-audio-player v2.0.0. Please use the \`controls\`
+        prop instead.
+        ${deprecated.alternativeMessage}`);
+      loggedDeprecations.push(propName);
+    }
+  });
+}
+
+let nextControlKey = 0;
+function getNextControlKey () {
+  return (nextControlKey++).toString();
+}
 
 /* converts given number of seconds to standard time display format
  * http://goo.gl/kEvnKn
@@ -17,45 +59,110 @@ function convertToTime (number) {
   return `${ mins < 10 ? '0' : '' }${ mins }:${ secs < 10 ? '0' : '' }${ secs }`;
 }
 
-/*
- * AudioPlayer
- *
- * Accepts 'playlist' prop of the form:
- *
- * [{ "url": "./path/to/file.mp3",
- *    "displayText": "ArtistA - Track 1" },
- *  { "url": "https://domain.com/track2.ogg",
- *    "displayText": "ArtistB - Track 2" }]
- *
- * Accepts 'autoplay' prop (true/[false]).
- *
- * Accepts 'autoplayDelayInSeconds' prop (default 0).
- *
- * Accepts 'gapLengthInSeconds' prop (default 0).
- * Specifies gap at end of one track before next
- * track begins (ignored for manual skip).
- *
- * Accepts 'hideBackSkip' prop (default false,
- * hides back skip button if true).
- *
- * Accepts 'hideForwardSkip' prop (default false,
- * hides forward skip button if true).
- *
- * Accepts 'disableSeek' prop (default false,
- * disables seeking through the audio if true).
- *
- * Accepts 'cycle' prop (default true,
- * starts playing at the beginning of the playlist
- * when finished if true).
- *
- * Accepts 'stayOnBackSkipThreshold' prop, default 5,
- * is number of seconds to progress until pressing back skip
- * restarts the current track.
- *
- * Accepts 'style' prop, object, is applied to
- * outermost div (React styles).
- *
- */
+// BEGIN PRIVATE CONTROL COMPONENTS
+
+const SkipButton = ({ hidden, back, audioPlayer }) => (
+  <div
+    id="skip_button"
+    className={classNames('skip_button audio_button', { hidden, back })}
+    onClick={audioPlayer.backSkip.bind(audioPlayer)}
+  >
+    <div className="skip_button_inner">
+      <div className="right_facing_triangle"></div>
+      <div className="right_facing_triangle"></div>
+    </div>
+  </div>
+);
+
+const BackSkipButton = ({ audioPlayer }) => (
+  <SkipButton
+    audioPlayer={audioPlayer}
+    hidden={audioPlayer.props.hideBackSkip}
+    back={true}
+  />
+);
+
+const ForwardSkipButton = ({ audioPlayer }) => (
+  <SkipButton
+    audioPlayer={audioPlayer}
+    hidden={audioPlayer.props.hideForwardSkip}
+    back={false}
+  />
+);
+
+const PlayPauseButton = ({ audioPlayer }) => (
+  <div
+    id="play_pause_button"
+    className={classNames('play_pause_button audio_button', {
+      paused: audioPlayer.state.paused
+    })}
+    onClick={audioPlayer.togglePause.bind(audioPlayer)}
+  >
+    <div className="play_pause_inner">
+      <div className="left"></div>
+      <div className="right"></div>
+      <div className="triangle_1"></div>
+      <div className="triangle_2"></div>
+    </div>
+  </div>
+);
+
+const Spacer = () => <div className="spacer" />;
+
+const AudioProgressDisplay = (props) => {
+  return (
+    <div
+      id="audio_progress_container"
+      className="audio_progress_container"
+      ref={props.onRef}
+      onMouseDown={props.onMouseTouchStart}
+      onTouchStart={props.onMouseTouchStart}
+    >
+      <div
+        id="audio_progress"
+        className="audio_progress"
+        style={{ width: props.progressBarWidth }}></div>
+      <div id="audio_progress_overlay" className="audio_progress_overlay">
+        <div className="audio_info_marquee">
+          <div
+            id="audio_info"
+            className="audio_info noselect"
+            draggable="false"
+          >
+            {props.displayText}
+          </div>
+        </div>
+        <div
+          id="audio_time_progress"
+          className="audio_time_progress noselect"
+          draggable="false"
+        >
+          {props.timeRatio}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const AudioProgress = (props) => (
+  <AudioProgressDisplay
+    {...props}
+    onMouseTouchStart={props.audioPlayer.adjustDisplayedTime}
+    onRef={(ref) => props.audioPlayer.audioProgressContainer = ref}
+  />
+);
+
+const keywordToControlComponent = {
+  backskip: BackSkipButton,
+  forwardskip: ForwardSkipButton,
+  playpause: PlayPauseButton,
+  spacer: Spacer,
+  progressdisplay: AudioProgressDisplay,
+  progress: AudioProgress
+};
+
+// END PRIVATE CONTROL COMPONENTS
+
 class AudioPlayer extends React.Component {
 
   constructor (props) {
@@ -86,68 +193,108 @@ class AudioPlayer extends React.Component {
 
     this.state = this.defaultState;
 
+    // set of keys to use in controls render
+    this.controlKeys = props.controls.map(getNextControlKey);
+
     // html audio element used for playback
     this.audio = null;
     this.audioProgressContainer = null;
-    /* bounding rectangle used for calculating seek
-     * position from mouse/touch coordinates
-     */
-    this.audioProgressBoundingRect = null;
 
-    // EventListeners to create on mount and remove on unmount
-    this.seekReleaseListener = null;
-    this.resizeListener = null;
+    // event listeners to add on mount and remove on unmount
+    this.adjustDisplayedTime = this.adjustDisplayedTime.bind(this);
+    this.seekReleaseListener = e => this.seek(e);
+    this.audioPlayListener = () => this.setState({ paused: false });
+    this.audioPauseListener = () => this.setState({ paused: true });
+    this.audioEndListener = () => {
+      const gapLengthInSeconds = this.props.gapLengthInSeconds || 0;
+      clearTimeout(this.gapLengthTimeout);
+      this.gapLengthTimeout = setTimeout(() => this.skipToNextTrack(), gapLengthInSeconds * 1000);
+    };
+    this.audioStallListener = () => this.togglePause(true);
+    this.audioTimeUpdateListener = () => this.handleTimeUpdate();
+    this.audioMetadataLoadedListener = () => this.setState({
+      activeTrackIndex: this.currentTrackIndex
+    });
   }
 
   componentDidMount () {
-    const seekReleaseListener = this.seekReleaseListener = e => this.seek(e);
-    window.addEventListener('mouseup', seekReleaseListener);
-    document.addEventListener('touchend', seekReleaseListener);
-    const resizeListener = this.resizeListener = () => this.fetchAudioProgressBoundingRect();
-    window.addEventListener('resize', resizeListener);
-    resizeListener();
+    logDeprecationWarnings(this.props);
+
+    // add event listeners bound outside the scope of our component
+    window.addEventListener('mousemove', this.adjustDisplayedTime);
+    document.addEventListener('touchmove', this.adjustDisplayedTime);
+    window.addEventListener('mouseup', this.seekReleaseListener);
+    document.addEventListener('touchend', this.seekReleaseListener);
 
     const audio = this.audio = document.createElement('audio');
+
+    // add event listeners on the audio element
     audio.preload = 'metadata';
-    audio.addEventListener('ended', () => {
-      const gapLengthInSeconds = this.props.gapLengthInSeconds || 0;
-      setTimeout(() => this.skipToNextTrack(), gapLengthInSeconds * 1000);
-    });
-    audio.addEventListener('timeupdate', () => this.handleTimeUpdate());
-    audio.addEventListener('loadedmetadata', () => {
-      this.setState({
-        activeTrackIndex: this.currentTrackIndex
-      });
-    });
-    audio.addEventListener('play', () => {
-      this.setState({
-        paused: false
-      });
-    });
-    audio.addEventListener('stalled', () => this.togglePause(true));
+    audio.addEventListener('play', this.audioPlayListener);
+    audio.addEventListener('pause', this.audioPauseListener);
+    audio.addEventListener('ended', this.audioEndListener);
+    audio.addEventListener('stalled', this.audioStallListener);
+    audio.addEventListener('timeupdate', this.audioTimeUpdateListener);
+    audio.addEventListener('loadedmetadata', this.audioMetadataLoadedListener);
+    this.addMediaEventListeners(this.props.onMediaEvent);
+
     if (this.props.playlist && this.props.playlist.length) {
       this.updateSource();
       if (this.props.autoplay) {
         const delay = this.props.autoplayDelayInSeconds || 0;
-        setTimeout(() => this.togglePause(false), delay * 1000);
+        clearTimeout(this.delayTimeout);
+        this.delayTimeout = setTimeout(() => this.togglePause(false), delay * 1000);
       }
+    }
+
+    if (this.props.audioElementRef) {
+      this.props.audioElementRef(audio);
     }
   }
 
   componentWillUnmount () {
     // remove event listeners bound outside the scope of our component
+    window.removeEventListener('mousemove', this.adjustDisplayedTime);
+    document.removeEventListener('touchmove', this.adjustDisplayedTime);
     window.removeEventListener('mouseup', this.seekReleaseListener);
     document.removeEventListener('touchend', this.seekReleaseListener);
-    window.removeEventListener('resize', this.resizeListener);
 
-    /* pause the audio element before dereferencing it
-     * (we can't know when garbage collection will run)
-     */
+    // remove event listeners on the audio element
+    this.audio.removeEventListener('play', this.audioPlayListener);
+    this.audio.removeEventListener('pause', this.audioPauseListener);
+    this.audio.removeEventListener('ended', this.audioEndListener);
+    this.audio.removeEventListener('stalled', this.audioStallListener);
+    this.audio.removeEventListener('timeupdate', this.audioTimeUpdateListener);
+    this.audio.removeEventListener('loadedmetadata', this.audioMetadataLoadedListener);
+    this.removeMediaEventListeners(this.props.onMediaEvent);
+    clearTimeout(this.gapLengthTimeout);
+    clearTimeout(this.delayTimeout);
+
+    // pause the audio element before we unmount
     this.audio.pause();
-    this.audio = null;
+
+    if (this.props.audioElementRef) {
+      this.props.audioElementRef(this.audio);
+    }
   }
 
   componentWillReceiveProps (nextProps) {
+    logDeprecationWarnings(nextProps);
+
+    // Update media event listeners that may have changed
+    this.removeMediaEventListeners(this.props.onMediaEvent);
+    this.addMediaEventListeners(nextProps.onMediaEvent);
+
+    const oldControls = [...this.props.controls];
+    this.controlKeys = nextProps.controls.map(control => {
+      const matchingIndex = oldControls.indexOf(control);
+      if (matchingIndex !== -1 && oldControls[matchingIndex]) {
+        oldControls[matchingIndex] = null;
+        return this.controlKeys[matchingIndex];
+      }
+      return getNextControlKey();
+    });
+
     const newPlaylist = nextProps.playlist;
     if (!newPlaylist || !newPlaylist.length) {
       if (this.audio) {
@@ -173,6 +320,30 @@ class AudioPlayer extends React.Component {
     }
   }
 
+  addMediaEventListeners (mediaEvents) {
+    if (!mediaEvents) {
+      return;
+    }
+    Object.keys(mediaEvents).forEach((type) => {
+      if (typeof mediaEvents[type] !== 'function') {
+        return;
+      }
+      this.audio.addEventListener(type, mediaEvents[type]);
+    });
+  }
+
+  removeMediaEventListeners (mediaEvents) {
+    if (!mediaEvents) {
+      return;
+    }
+    Object.keys(mediaEvents).forEach((type) => {
+      if (typeof mediaEvents[type] !== 'function') {
+        return;
+      }
+      this.audio.removeEventListener(type, mediaEvents[type]);
+    });
+  }
+
   componentDidUpdate () {
     /* if we loaded a new playlist and reset the current track marker, we
      * should load up the first one.
@@ -188,10 +359,7 @@ class AudioPlayer extends React.Component {
     }
     const pause = typeof value === 'boolean' ? value : !this.state.paused;
     if (pause) {
-      this.audio.pause();
-      return this.setState({
-        paused: true
-      });
+      return this.audio.pause();
     }
     if (!this.props.playlist || !this.props.playlist.length) {
       return;
@@ -226,8 +394,8 @@ class AudioPlayer extends React.Component {
       displayedTime: 0
     }, () => {
       this.updateSource();
-      const shouldCycle = (this.props.cycle && i === 0);
-      const shouldPause = !shouldCycle || (typeof shouldPlay === 'boolean' ? !shouldPlay : false);
+      const shouldPauseOnCycle = (!this.props.cycle && i === 0);
+      const shouldPause = shouldPauseOnCycle || (typeof shouldPlay === 'boolean' ? !shouldPlay : false);
       this.togglePause(shouldPause);
     });
   }
@@ -256,10 +424,6 @@ class AudioPlayer extends React.Component {
     this.audio.src = this.props.playlist[this.currentTrackIndex].url;
   }
 
-  fetchAudioProgressBoundingRect () {
-    this.audioProgressBoundingRect = this.audioProgressContainer.getBoundingClientRect();
-  }
-
   handleTimeUpdate () {
     if (!this.seekInProgress && this.audio) {
       this.setState({
@@ -283,12 +447,12 @@ class AudioPlayer extends React.Component {
      * after touch handlers if we're seeking.
      */
     event.preventDefault();
-    const boundingRect = this.audioProgressBoundingRect;
+    const boundingRect = this.audioProgressContainer.getBoundingClientRect();
     const isTouch = event.type.slice(0, 5) === 'touch';
     const pageX = isTouch ? event.targetTouches.item(0).pageX : event.pageX;
     const position = pageX - boundingRect.left - document.body.scrollLeft;
     const containerWidth = boundingRect.width;
-    const progressPercentage = position / containerWidth;
+    const progressPercentage = Math.max(0, Math.min(1, position / containerWidth));
     this.setState({
       displayedTime: progressPercentage * this.audio.duration
     });
@@ -330,8 +494,6 @@ class AudioPlayer extends React.Component {
 
     const progressBarWidth = `${ (displayedTime / duration) * 100 }%`;
 
-    const adjustDisplayedTime = e => this.adjustDisplayedTime(e);
-
     return (
       <div
         id="audio_player"
@@ -339,77 +501,14 @@ class AudioPlayer extends React.Component {
         title={displayText}
         style={this.props.style}
       >
-
-        <div className="audio_controls">
-          <div
-            id="skip_button"
-            className={classNames('skip_button back audio_button', {
-              'hidden': this.props.hideBackSkip
-            })}
-            onClick={() => this.backSkip()}
-          >
-            <div className="skip_button_inner">
-              <div className="right_facing_triangle"></div>
-              <div className="right_facing_triangle"></div>
-            </div>
-          </div>
-          <div
-            id="play_pause_button"
-            className={classNames('play_pause_button', 'audio_button', {
-              'paused': this.state.paused
-            })}
-            onClick={() => this.togglePause()}
-          >
-            <div className="play_pause_inner">
-              <div className="left"></div>
-              <div className="right"></div>
-              <div className="triangle_1"></div>
-              <div className="triangle_2"></div>
-            </div>
-          </div>
-          <div
-            id="skip_button"
-            className={classNames('skip_button audio_button', {
-              'hidden': this.props.hideForwardSkip
-            })}
-            onClick={() => this.skipToNextTrack()}
-          >
-            <div className="skip_button_inner">
-              <div className="right_facing_triangle"></div>
-              <div className="right_facing_triangle"></div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          id="audio_progress_container"
-          className="audio_progress_container"
-          ref={(ref) => this.audioProgressContainer = ref}
-          onMouseDown={adjustDisplayedTime}
-          onMouseMove={adjustDisplayedTime}
-          onTouchStart={adjustDisplayedTime}
-          onTouchMove={adjustDisplayedTime}
-        >
-          <div
-            id="audio_progress"
-            className="audio_progress"
-            style={{ width: progressBarWidth }}></div>
-          <div id="audio_progress_overlay" className="audio_progress_overlay">
-            <div className="audio_info_marquee">
-              <div id="audio_info" className="audio_info noselect" draggable="false">
-                {displayText}
-              </div>
-            </div>
-            <div
-              id="audio_time_progress"
-              className="audio_time_progress noselect"
-              draggable="false"
-            >
-              {timeRatio}
-            </div>
-          </div>
-        </div>
-
+        {this.props.controls.map((controlKeyword, index) => {
+          const controlProps =
+            controlKeyword === 'progress' || controlKeyword === 'progressdisplay'
+              ? { displayText, timeRatio, progressBarWidth, audioPlayer: this }
+              : { audioPlayer : this };
+          const Control = keywordToControlComponent[controlKeyword] || null;
+          return <Control {...controlProps} key={this.controlKeys[index]} />;
+        })}
       </div>
     );
   }
@@ -417,20 +516,38 @@ class AudioPlayer extends React.Component {
 }
 
 AudioPlayer.propTypes = {
-  playlist: React.PropTypes.array,
-  autoplay: React.PropTypes.bool,
-  autoplayDelayInSeconds: React.PropTypes.number,
-  gapLengthInSeconds: React.PropTypes.number,
-  hideBackSkip: React.PropTypes.bool,
-  hideForwardSkip: React.PropTypes.bool,
-  cycle: React.PropTypes.bool,
-  disableSeek: React.PropTypes.bool,
-  stayOnBackSkipThreshold: React.PropTypes.number,
-  style: React.PropTypes.object
+  playlist: PropTypes.array,
+  controls: PropTypes.arrayOf(PropTypes.oneOf([
+    'playpause',
+    'backskip',
+    'forwardskip',
+    'progress',
+    'progressdisplay',
+    'spacer'
+  ])),
+  autoplay: PropTypes.bool,
+  autoplayDelayInSeconds: PropTypes.number,
+  gapLengthInSeconds: PropTypes.number,
+  hideBackSkip: PropTypes.bool,
+  hideForwardSkip: PropTypes.bool,
+  cycle: PropTypes.bool,
+  disableSeek: PropTypes.bool,
+  stayOnBackSkipThreshold: PropTypes.number,
+  style: PropTypes.object,
+  onMediaEvent: PropTypes.object,
+  audioElementRef: PropTypes.func
 };
 
 AudioPlayer.defaultProps = {
-  cycle: true
+  cycle: true,
+  controls: [
+    'spacer',
+    'backskip',
+    'playpause',
+    'forwardskip',
+    'spacer',
+    'progress'
+  ]
 };
 
 module.exports = AudioPlayer;

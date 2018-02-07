@@ -7,13 +7,13 @@ $audio_player_btn_height: $audio_player_base_height !default;
 $audio_player_btn_margin: 4px !default;
 $audio_player_btn_padding: 11px !default;
 
-$audio_player_controls_margin: 10px !default;
+$audio_player_spacer_width: 10px !default;
 
 $audio_player_info_font_size: 19.2px !default;
 $audio_player_time_font_size: 23px !default;
 $audio_player_time_margin: 20px !default;
 
-$audio_player_marquee_margin: $audio_player_controls_margin !default;
+$audio_player_marquee_margin: $audio_player_spacer_width !default;
 $audio_player_marquee_width: calc(100% - 180px) !default;
 
 $audio_player_play_btn_border_color: $audio_player_btn_bg_color !default;
@@ -88,12 +88,10 @@ $audio_player_progress_bg_color: #4a4a4a !default;
   background-color: $audio_player_base_bg_color;
   width: 100%;
 
-  .audio_controls {
-    display: flex;
-    flex-direction: row;
-    margin-left: $audio_player_controls_margin;
-    margin-right: $audio_player_controls_margin;
+  .spacer {
+    width: $audio_player_spacer_width;
   }
+
   .audio_progress_container {
     position: relative;
     height: 100%;
